@@ -26,5 +26,5 @@
 #  `comment` text NOT NULL,
 #  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 #) DEFAULT CHARSET=utf8mb4;
-
-alter table comments add index post_index(post_id);
+#
+#alter table comments add index post_index(post_id);
