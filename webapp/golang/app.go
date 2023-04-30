@@ -862,6 +862,7 @@ func main() {
 
 	// redis
 	redisClient := ExampleNewClient()
+	_ = redisClient
 }
 
 // redis
