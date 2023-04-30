@@ -859,7 +859,7 @@ func main() {
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 
-	# redis
+	// redis
 	redisClient := newClient()
 	result, err := ping(redisClient)
 	if err != nil {
@@ -870,7 +870,7 @@ func main() {
 }
 
 
-# redis
+// redis
 func newRedisClient() *redis.Client {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
@@ -880,6 +880,7 @@ func newRedisClient() *redis.Client {
 	return redisClient
 }
 
+// redis
 func redisPing(client *redis.Client) (string, error) {
 	result, err := client.Ping().Result()
 	if err != nil {
