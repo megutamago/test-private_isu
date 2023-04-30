@@ -860,18 +860,22 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", r))
 
 	// redis
-	redisClient := newClient()
+	redisClient := ExampleNewClient()
 }
 
-
 // redis
-func newClient() *redis.Client {
-	redisClient := redis.NewClient(&redis.Options{
+var (
+	ctx = context.Background()
+	rdb *redis.Client
+)
+
+func ExampleNewClient() {
+	rdb := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379", // use default Addr
 		Password: "",               // no password set
 		DB:       0,                // use default DB
 	})
 	pong, err := rdb.Ping(ctx).Result()
 	fmt.Println(pong, err)
-	return redisClient
+	// Output: PONG <nil>
 }
