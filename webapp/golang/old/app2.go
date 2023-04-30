@@ -24,6 +24,8 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	_ "net/http/pprof"
+	"context"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
@@ -857,4 +859,66 @@ func main() {
 	})
 
 	log.Fatal(http.ListenAndServe(":8080", r))
+
+	hoge(dsn)
+}
+
+// redis
+var (
+	ctx = context.Background()
+	rdb *redis.Client
+)
+
+func hoge(dsn string) {
+    searchId := 5
+	redisClient := ExampleNewClient()
+
+    nameInRedis, err = redisClient.Get(ctx, "name_"+strconv.Itoa(searchId)).Result()
+    if err != nil {
+      fmt.Println(err)
+    } else if err == redis.Nil { //key name_[searchId] does not exist in redis
+		db, err = sqlx.Open("mysql", dsn)
+		if err != nil {
+			log.Fatalf("Failed to connect to DB: %s.", err.Error())
+		}
+		defer db.Close()
+
+        stmtOut, err := db.Prepare("SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC")
+        if err != nil {
+            panic(err.Error())
+        }
+        defer stmtOut.Close()
+        
+        rows, err := stmtOut.Query(searchId) 
+        if err != nil {
+            panic(err.Error()) 
+        }
+        
+        numRows = 0
+        for rows.Next() {
+            var nameInSQL string
+            err = rows.Scan(&nameInSQL)
+            if err != nil {
+                panic(err.Error())
+            }
+            fmt.Printf("name is %s\n", nameInSQL)
+            numRows = numRows + 1
+        }
+        if numRows == 0 {
+            fmt.Printf("corresponding name is not found\n")
+        } else { //key name_[searchId] exists in redis
+        fmt.Printf("name is %s\n", nameInRedis)
+        }
+    }
+}
+
+func ExampleNewClient() *redis.Client  {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379", // use default Addr
+		Password: "",               // no password set
+		DB:       0,                // use default DB
+	})
+	pong, err := rdb.Ping(ctx).Result()
+	fmt.Println(pong, err)
+	return rdb
 }
