@@ -24,6 +24,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	_ "net/http/pprof"
+	"github.com/go-redis/redis"
 )
 
 var (
