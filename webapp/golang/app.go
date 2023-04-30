@@ -861,7 +861,6 @@ func main() {
 
 	// redis
 	redisClient := newClient()
-	
 	result, err := ping(redisClient)
 	if err != nil {
 		fmt.Println(err)
@@ -874,19 +873,17 @@ func main() {
 // redis
 func newClient() *redis.Client {
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: “localhost:6379”,
-		Password: “”, // no password
-		DB: 0, // default DB
+		Addr:     "localhost:6379", // use default Addr
+		Password: "",               // no password set
+		DB:       0,                // use default DB
 	})
-	
 	return redisClient
 }
 
 func ping(client *redis.Client) (string, error) {
 	result, err := client.Ping().Result()
-	
 	if err != nil {
-		return “”, err
+		return "", err
 	} else {
 		return result, nil
 	}
