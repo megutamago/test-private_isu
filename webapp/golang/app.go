@@ -878,5 +878,6 @@ func ExampleNewClient() {
 	})
 	pong, err := rdb.Ping(ctx).Result()
 	fmt.Println(pong, err)
-	// Output: PONG <nil>
+
+	return rdb
 }
