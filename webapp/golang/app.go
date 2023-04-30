@@ -870,7 +870,7 @@ var (
 	rdb *redis.Client
 )
 
-func ExampleNewClient() {
+func ExampleNewClient() *redis.Client  {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379", // use default Addr
 		Password: "",               // no password set
