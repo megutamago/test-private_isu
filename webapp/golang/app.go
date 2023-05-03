@@ -416,9 +416,11 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 	const queryCacheKey = "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC"
 
 	// Redisにキャッシュがある場合はそれを返す
-	cachedData, err := rdb.Get(ctx, queryCacheKey).Result()
+	//cachedData, err := rdb.Get(ctx, queryCacheKey).Result()
+	err := rdb.Get(ctx, queryCacheKey).Result()
 	if err == nil {
-		err = json.Unmarshal([]byte(cachedData), &results)
+		//err = json.Unmarshal([]byte(cachedData), &results)
+		err = rdb.Get(ctx, queryCacheKey).Scan(&results)
 		if err == nil {
 			return
 		}
@@ -429,11 +431,12 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 			log.Print(err)
 			return
 		}
-		jsonData, err := json.Marshal(results)
-		if err != nil {
-			return
-		}
-		err = rdb.Set(ctx, queryCacheKey, jsonData, 10*time.Minute).Err()
+		//jsonData, err := json.Marshal(results)
+		//if err != nil {
+		//	return
+		//}
+		//err = rdb.Set(ctx, queryCacheKey, jsonData, 10*time.Minute).Err()
+		err := rdb.Set(ctx, queryCacheKey, results, 10*time.Minute).Err()
 		if err != nil {
 			return
 		}
