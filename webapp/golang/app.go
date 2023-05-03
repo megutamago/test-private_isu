@@ -24,6 +24,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	// Add
+	"encoding/json"
 	_ "net/http/pprof"
 	"github.com/go-redis/redis/v8"
 )
@@ -37,6 +38,7 @@ type Config struct {
 
 var (
 	// Add
+    rdb  *redis.Client
 	conf = &Config{
 		RedisAddr:     "localhost:6379",
 		RedisPassword: "",
@@ -399,7 +401,15 @@ func getLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func getIndex(w http.ResponseWriter, r *http.Request) {
+	rdb = redis.NewClient(&redis.Options{
+    	Addr:     conf.RedisAddr,
+    	Password: conf.RedisPassword,
+    	DB:       conf.RedisDB,
+    })
+
 	me := getSessionUser(r)
+
+	results := []Post{}
 
 	// Add
 	rdb = redis.NewClient(&redis.Options{
@@ -415,26 +425,25 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 	// Redisにキャッシュがある場合はそれを返す
 	cachedData, err := rdb.Get(ctx, queryCacheKey).Result()
 	if err == nil {
-		results := []Post{}
 		err = json.Unmarshal([]byte(cachedData), &results)
 		if err == nil {
-			return results, nil
+			return
 		}
 	}
 
 	// Redisにキャッシュがない場合はクエリを実行して結果をキャッシュする
-	err := db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC")
+	err = db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC")
 	if err != nil {
 		log.Print(err)
 		return
 	}
 	jsonData, err := json.Marshal(results)
 	if err != nil {
-		return nil, err
+		return
 	}
 	err = rdb.Set(ctx, queryCacheKey, jsonData, 10*time.Minute).Err()
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	posts, err := makePosts(results, getCSRFToken(r), false)

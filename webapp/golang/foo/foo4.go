@@ -45,10 +45,10 @@ func main() {
 
 func getPosts() ([]Post, error) {
 	rdb = redis.NewClient(&redis.Options{
-                Addr:     conf.RedisAddr,
-                Password: conf.RedisPassword,
-                DB:       conf.RedisDB,
-        })
+    	Addr:     conf.RedisAddr,
+    	Password: conf.RedisPassword,
+    	DB:       conf.RedisDB,
+    })
 
     ctx := rdb.Context()
 
