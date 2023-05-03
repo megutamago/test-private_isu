@@ -23,10 +23,27 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
 
+	// Add
+	"encoding/json"
 	_ "net/http/pprof"
+	"github.com/go-redis/redis/v8"
 )
 
+// Add
+type Config struct {
+	RedisAddr     string
+	RedisPassword string
+	RedisDB       int
+}
+
 var (
+	// Add
+    rdb  *redis.Client
+	conf = &Config{
+		RedisAddr:     "localhost:6379",
+		RedisPassword: "",
+		RedisDB:       0,
+	}
 	db    *sqlx.DB
 	store *gsm.MemcacheStore
 )
@@ -384,15 +401,51 @@ func getLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func getIndex(w http.ResponseWriter, r *http.Request) {
+	rdb = redis.NewClient(&redis.Options{
+    	Addr:     conf.RedisAddr,
+    	Password: conf.RedisPassword,
+    	DB:       conf.RedisDB,
+    })
+
+	ctx := rdb.Context()
+
 	me := getSessionUser(r)
 
 	results := []Post{}
 
-	err := db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC")
+	const queryCacheKey = "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC"
+
+	// Redisにキャッシュがある場合はそれを返す
+	//cachedData, err := rdb.Get(ctx, queryCacheKey).Result()
+	//if err == nil {
+	//	err := json.Unmarshal([]byte(cachedData), &results)
+	//	if err == nil {
+	//		return
+	//	}
+	//}
+
+	// Redisにキャッシュがない場合はクエリを実行して結果をキャッシュする
+	err := db.Select(&results, queryCacheKey)
 	if err != nil {
 		log.Print(err)
 		return
+	} else {
+		jsonData, err := json.Marshal(results)
+		if err != nil {
+			return
+		}
+		err = rdb.Set(ctx, queryCacheKey, jsonData, 10*time.Minute).Err()
+		if err != nil {
+			return
+		}
 	}
+
+	//var filename = "test.log"
+	//logfile, _ := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	//multiLogFile := io.MultiWriter(os.Stdout, logfile)
+	//log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+	//log.SetOutput(multiLogFile)
+	//log.Println(results)
 
 	posts, err := makePosts(results, getCSRFToken(r), false)
 	if err != nil {
