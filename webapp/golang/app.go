@@ -416,29 +416,26 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 	const queryCacheKey = "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC"
 
 	// Redisにキャッシュがある場合はそれを返す
-	//cachedData, err := rdb.Get(ctx, queryCacheKey).Result()
-	err := rdb.Get(ctx, queryCacheKey).Result()
+	cachedData, err := rdb.Get(ctx, queryCacheKey).Result()
 	if err == nil {
-		//err = json.Unmarshal([]byte(cachedData), &results)
-		err = rdb.Get(ctx, queryCacheKey).Scan(&results)
+		err := json.Unmarshal([]byte(cachedData), &results)
 		if err == nil {
 			return
 		}
-	} else {
 		// Redisにキャッシュがない場合はクエリを実行して結果をキャッシュする
-		err := db.Select(&results, queryCacheKey)
+		err = db.Select(&results, queryCacheKey)
 		if err != nil {
 			log.Print(err)
 			return
-		}
-		//jsonData, err := json.Marshal(results)
-		//if err != nil {
-		//	return
-		//}
-		//err = rdb.Set(ctx, queryCacheKey, jsonData, 10*time.Minute).Err()
-		err := rdb.Set(ctx, queryCacheKey, results, 10*time.Minute).Err()
-		if err != nil {
-			return
+		} else {
+			jsonData, err := json.Marshal(results)
+			if err != nil {
+				return
+			}
+			err = rdb.Set(ctx, queryCacheKey, jsonData, 10*time.Minute).Err()
+			if err != nil {
+				return
+			}
 		}
 	}
 
