@@ -429,21 +429,21 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			return
 		}
-	}
-
-	// Redisにキャッシュがない場合はクエリを実行して結果をキャッシュする
-	err = db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC")
-	if err != nil {
-		log.Print(err)
-		return
-	}
-	jsonData, err := json.Marshal(results)
-	if err != nil {
-		return
-	}
-	err = rdb.Set(ctx, queryCacheKey, jsonData, 10*time.Minute).Err()
-	if err != nil {
-		return
+	} else {
+		// Redisにキャッシュがない場合はクエリを実行して結果をキャッシュする
+		err := db.Select(&results, queryCacheKey)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+		jsonData, err := json.Marshal(results)
+		if err != nil {
+			return
+		}
+		err = rdb.Set(ctx, queryCacheKey, jsonData, 10*time.Minute).Err()
+		if err != nil {
+			return
+		}
 	}
 
 	posts, err := makePosts(results, getCSRFToken(r), false)
