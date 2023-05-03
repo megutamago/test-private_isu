@@ -24,7 +24,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	// Add
-	//"encoding/json"
+	"encoding/json"
 	_ "net/http/pprof"
 	"github.com/go-redis/redis/v8"
 )
@@ -401,15 +401,15 @@ func getLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func getIndex(w http.ResponseWriter, r *http.Request) {
-	//rdb = redis.NewClient(&redis.Options{
-    //	Addr:     conf.RedisAddr,
-    //	Password: conf.RedisPassword,
-    //	DB:       conf.RedisDB,
-    //})
+	rdb = redis.NewClient(&redis.Options{
+    	Addr:     conf.RedisAddr,
+    	Password: conf.RedisPassword,
+    	DB:       conf.RedisDB,
+    })
 
-	//ctx := rdb.Context()
+	ctx := rdb.Context()
 
-	//const queryCacheKey = "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC"
+	const queryCacheKey = "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC"
 
 	// Redisにキャッシュがある場合はそれを返す
 	//cachedData, err := rdb.Get(ctx, queryCacheKey).Result()
@@ -439,7 +439,7 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 
 	results := []Post{}
 
-	err := db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC")
+	err = db.Select(&results, queryCacheKey)
 	if err != nil {
 		log.Print(err)
 		return
