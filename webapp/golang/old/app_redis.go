@@ -416,16 +416,24 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 	const queryCacheKey = "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC"
 
 	// Redisにキャッシュがある場合はそれを返す
-	//cachedData, err := rdb.Get(ctx, queryCacheKey).Result()
-	//if err == nil {
-	//	err := json.Unmarshal([]byte(cachedData), &results)
-	//	if err != nil {
-	//		return
-	//	}
-	//}
+	cachedData, err := rdb.Get(ctx, queryCacheKey).Result()
+	if err == nil {
+		err := json.Unmarshal([]byte(cachedData), &results)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+	}
+
+	//var filename = "test.log"
+	//logfile, _ := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	//multiLogFile := io.MultiWriter(os.Stdout, logfile)
+	//log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+	//log.SetOutput(multiLogFile)
+	//log.Println("hogehoge")
 
 	// Redisにキャッシュがない場合はクエリを実行して結果をキャッシュする
-	err := db.Select(&results, queryCacheKey)
+	err = db.Select(&results, queryCacheKey)
 	if err != nil {
 		log.Print(err)
 		return
@@ -439,13 +447,6 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
-	//var filename = "test.log"
-	//logfile, _ := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	//multiLogFile := io.MultiWriter(os.Stdout, logfile)
-	//log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
-	//log.SetOutput(multiLogFile)
-	//log.Println(results)
 
 	posts, err := makePosts(results, getCSRFToken(r), false)
 	if err != nil {
